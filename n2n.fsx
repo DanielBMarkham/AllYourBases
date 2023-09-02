@@ -3,28 +3,18 @@ open System.Text
 open FSharp.Collections
 open System.Numerics
 #r "bin/Debug/net7.0/AllYourBases.dll"
+open BasesFunctions
 
 let VERBOSE=true
-BasesFunctions.foobar()
+foobar()
 
 let characterLookup =
   [ (0,"0");(1,"1");(2,"2");(3,"3");(4,"4");(5,"5");(6,"6");(7,"7");(8,"8")
     ;(9,"9");(10,"a");(11,"b");(12,"c");(13,"d");(14,"e");(15,"f") ]
-// (all of these test sections go away when done, only needed during coding, not maintenance or execution)
-
-type NumberBase = BaseInBaseTenNotation of int | BaseAsACustomString of string
-let parseCLIOptionsForNumberBase iArgIndex = // DISCRIMINATED UNION ARG HELPER NEVER FAIL
-  try 
-    let arg=Environment.GetCommandLineArgs()[iArgIndex]
-    let tryParse = Int32.TryParse(arg)
-    if fst tryParse
-      then BaseInBaseTenNotation (snd tryParse)
-      else BaseAsACustomString (arg)
-   with |_ ->BaseInBaseTenNotation 10
 
 // OUTER ONION
 let srcNumberToTranslate=try Environment.GetCommandLineArgs()[2] with |_ ->"0"
-let srcNumberBase:NumberBase= parseCLIOptionsForNumberBase 4
+let srcNumberBase:NumberBase= parseCLIOptionsForNumberBase 3
 let targetNumberBase = parseCLIOptionsForNumberBase 4
 
 // OUTER ONION TEST/PRINT
@@ -37,8 +27,6 @@ if VERBOSE
 // USE TRIES TO HANDLE ANY ERRORS AS THE BIZ DESIRES - ERRORS ARE BIZ ISSUES, NOT CODING ONES
 // IN A LARGE MICROSERVICES ENVIRONMENT, HERE IS WHERE YOU MIGHT FORK OR JOIN DATA STREAMS IN THE OUTER OS
 // ONCE WE'RE DONE HERE, SHOULD HAVE INCOMING NUMBER IN A BIG N-LENGTH STRING IN BASE 10
-let isScientificNotation numberString = System.Text.RegularExpressions.Regex.Match(numberString, "[e|E][\+\-]").Length=2
-let splitByScientificNotation numberString = System.Text.RegularExpressions.Regex.Split(numberString, "[e|E][\+\-]")
 let mainNumber = try (splitByScientificNotation srcNumberToTranslate)[0] with |_ -> "0"
 let exponentNumber = try (splitByScientificNotation srcNumberToTranslate)[1] with |_ -> "0"
 let exponentSign = if srcNumberToTranslate.Contains("-") then "-" else "+"
@@ -117,17 +105,5 @@ printfn "Running result %A" temporarySums
 let convertedToBaseTen:bigint = temporarySums |> Seq.sum
 printfn "converted to base ten bigint %A" convertedToBaseTen
 
-
-9
-
-
-//    if exponentWalkingDirection = 1
-//      then
-//        printfn "UP exponentMultiplier %A" exponentMultiplier
-//      else
-//        printfn "DOWN exponentMultiplier %A" ((i+1)*(-1))
-//    printfn "%A" ((i+1)*(-1))
-//    printfn "This digit represents %A" digitValueMultiplier
-//    printfn "Digit Value %A" digitValue
-//    printfn "Running Result %A" runningResult
+convertFromBigIntegerToBaseX convertedToBaseTen 7I
 
