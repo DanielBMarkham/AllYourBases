@@ -65,7 +65,7 @@ let convertFromBigIntegerToBaseX (bignumber:bigint) (destBase:int) =
         (remainder,resultBuffer)
       ) (bignumber, resultBuffer)
     |>ignore
-  dumpIt "THE ANSWER IS {resultBuffer}"
+  dumpIt $"THE ANSWER IS {resultBuffer}"
   string resultBuffer
 
 let parseCLIOptionsForNumberBase (arg:string) = // DISCRIMINATED UNION ARG HELPER NEVER FAIL
@@ -154,10 +154,10 @@ let main arg1 arg2 arg3 =
       )
     // ODDBALL BASES NOT CODED
 
-  dumpIt "Running result {temporarySums}"
+  dumpIt $"Running result {temporarySums}"
 
   let convertedToBaseTen:bigint = temporarySums |> Seq.sum
-  dumpIt "converted to base ten bigint {convertedToBaseTen}"
+  dumpIt $"converted to base ten bigint {convertedToBaseTen}"
 
   let rur=
     match targetNumberBase
