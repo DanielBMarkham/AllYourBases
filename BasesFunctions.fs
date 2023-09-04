@@ -5,10 +5,13 @@ open System.Numerics
 open FSharp.Collections
 
 let VERBOSE=true
+let logIt f = if VERBOSE then f else ()
+let dumpIt debug = logIt (printfn debug)
+let test="cat"
+dumpIt "\nMODULE LOADED\n"
+
 type NumberBase = BaseInBaseTenNotation of int | FunkyOddballBase of string
 type PaddingNeeded = AddLeadingZeros | MoveDecimalAroundInNumber  | AddTrailingZeros | Nothing
-
-let foobar() = printfn "\nMODULE LOADED\n"
 
 let characterLookup =
   [ (0,"0");(1,"1");(2,"2");(3,"3");(4,"4");(5,"5");(6,"6");(7,"7");(8,"8")
@@ -16,7 +19,7 @@ let characterLookup =
 
 let convertValueToDigit (srcNumber:int) (destBase:NumberBase) = 
   let isNumberUnderTen=srcNumber<10
-  if isNumberUnderTen then printfn "number under ten" else ()
+  if isNumberUnderTen then dumpIt "number under ten" else ()
   match isNumberUnderTen
     with 
       | true->(char)(srcNumber-1 + (int '1'))
@@ -26,7 +29,9 @@ let convertValueToDigit (srcNumber:int) (destBase:NumberBase) =
 
 let convertDigitToValue (srcDigit:char) (srcBase:NumberBase) = 
   let isNormalDigitPresent=System.Text.RegularExpressions.Regex.Match(string srcDigit, "\d").Length>0
-  if isNormalDigitPresent then printf "normal digit present" else printf "no normal digit present"
+  if isNormalDigitPresent 
+    then dumpIt "normal digit present" 
+    else dumpIt "no normal digit present"
   match srcBase
     with 
       | BaseInBaseTenNotation(a)->
@@ -42,18 +47,14 @@ let convertDigitToValue (srcDigit:char) (srcBase:NumberBase) =
             let valueChar (c:char) = (int c) - (int 'a')+10
             valueChar (System.Char.ToLower srcDigit)
 
-
-
 let isScientificNotation numberString = System.Text.RegularExpressions.Regex.Match(numberString, "[e|E][\+\-]").Length=2
 let splitByScientificNotation numberString = System.Text.RegularExpressions.Regex.Split(numberString, "[e|E][\+\-]")
 
-
 let convertFromBigIntegerToBaseX (bignumber:bigint) (destBase:int) =
-  printfn "IM HERE"
   let numDigits= bigint.Log destBase
   let startingExponent = (int)numDigits+1
   let resultBuffer=new System.Text.StringBuilder(4096)
-  printfn "numDigits %A" startingExponent
+  dumpIt $"numDigits {startingExponent}"
   [for x in 1..startingExponent do yield startingExponent-x] 
     |> Seq.fold(
       fun (acc:bigint*System.Text.StringBuilder) x->
@@ -64,10 +65,8 @@ let convertFromBigIntegerToBaseX (bignumber:bigint) (destBase:int) =
         (remainder,resultBuffer)
       ) (bignumber, resultBuffer)
     |>ignore
-  //printfn "THE ANSWER IS %A" resultBuffer
+  dumpIt "THE ANSWER IS {resultBuffer}"
   string resultBuffer
-
-
 
 let parseCLIOptionsForNumberBase (arg:string) = // DISCRIMINATED UNION ARG HELPER NEVER FAIL
   try 
@@ -83,11 +82,10 @@ let main arg1 arg2 arg3 =
   let srcNumberBase:NumberBase= parseCLIOptionsForNumberBase arg2
   let targetNumberBase = parseCLIOptionsForNumberBase arg3
   // OUTER ONION TEST/PRINT
-  if VERBOSE
-    then
-      printfn "OUTER ONION\n Number to translate: %A Number Base %A Base to translate to base: %A" srcNumberToTranslate srcNumberBase targetNumberBase    
-    else ()
-    
+  
+  dumpIt $"I ate the entire {test}"
+  dumpIt $"OUTER ONION\n Number to translate: {srcNumberToTranslate} Number Base {srcNumberBase} Base to translate to base: {targetNumberBase}" 
+      
   // BUSINESS CONSISTENCY - IS DATA IN FORMAT THAT MAKES SENSE TO PROBLEM
   // USE TRIES TO HANDLE ANY ERRORS AS THE BIZ DESIRES - ERRORS ARE BIZ ISSUES, NOT CODING ONES
   // IN A LARGE MICROSERVICES ENVIRONMENT, HERE IS WHERE YOU MIGHT FORK OR JOIN DATA STREAMS IN THE OUTER OS
@@ -108,9 +106,8 @@ let main arg1 arg2 arg3 =
     let numSplit = try originalString.Split([|'.'|]) with |_ ->[|"0";"0"|]
     let decimalLocation = try originalString.IndexOf(".") with |_-> originalString.Length
     let moveRight = if moveDirection = "+" then true else false
-    if VERBOSE
-      then printfn "moveCount %A numSplit %A decimalLocation %A moveRight %A " moveCount numSplit decimalLocation moveRight
-      else ()
+    dumpIt $"moveCount {moveCount} numSplit {numSplit} decimalLocation {decimalLocation} moveRight {moveRight} "
+
     let newDecimal = 
       if exponentNumber = "0" then 0
       else if moveRight then decimalLocation + moveCount else decimalLocation - moveCount
@@ -129,18 +126,11 @@ let main arg1 arg2 arg3 =
           | (AddTrailingZeros,n)->numSplit[0] + numSplit[1] + String('0',snd whatToDo)
           | (MoveDecimalAroundInNumber,n)->""
 
-    if VERBOSE
-      then
-        printfn " BIZ CORE\n WhatToDo %A newDecimal %A Big Honking Incoming Number %A" whatToDo newDecimal explodedNumber
-      else ()
+    dumpIt $" BIZ CORE\n WhatToDo {whatToDo} newDecimal {newDecimal} Big Honking Incoming Number {explodedNumber}"
     explodedNumber
 
   // BUSINESS CONSISTENCY TESTS
-  if VERBOSE
-    then
-      printfn "BIZ CONSISTENCY\n IsScientificNotaion %A Main Number %A Exponent Number  %A Exponent Sign %A NumberWithDecimal %A " (isScientificNotation srcNumberToTranslate) mainNumber exponentNumber  exponentSign numberWithDecimal
-    else ()
-
+  dumpIt $"BIZ CONSISTENCY\n IsScientificNotaion {(isScientificNotation srcNumberToTranslate)} Main Number {mainNumber} Exponent Number  {exponentNumber} Exponent Sign{exponentSign} NumberWithDecimal {numberWithDecimal}"
 
 
   let superHugeNumberString = moveDecimal (makeSureStringHasDecimalOrAddAtEnd mainNumber) exponentSign exponentNumber
@@ -162,12 +152,12 @@ let main arg1 arg2 arg3 =
       let runningResult = digitValueMultiplier * digitValue
       runningResult
       )
-    // WHO KNOWS WHAT KINDS OF BASE SYSTEMS WE'LL USE
+    // ODDBALL BASES NOT CODED
 
-  printfn "Running result %A" temporarySums
+  dumpIt "Running result {temporarySums}"
 
   let convertedToBaseTen:bigint = temporarySums |> Seq.sum
-  printfn "converted to base ten bigint %A" convertedToBaseTen
+  dumpIt "converted to base ten bigint {convertedToBaseTen}"
 
   let rur=
     match targetNumberBase
@@ -175,15 +165,4 @@ let main arg1 arg2 arg3 =
         | BaseInBaseTenNotation x->convertFromBigIntegerToBaseX convertedToBaseTen x
         |_->"FUNKY BASE TYPES NOT IMPLEMENTED"
     
-
-
-
-
-
   rur
-
-
-
-
-
-
