@@ -48,7 +48,7 @@ let isScientificNotation numberString = System.Text.RegularExpressions.Regex.Mat
 let splitByScientificNotation numberString = System.Text.RegularExpressions.Regex.Split(numberString, "[e|E][\+\-]")
 
 
-let convertFromBigIntegerToBaseX (bignumber:bigint) destBase =
+let convertFromBigIntegerToBaseX (bignumber:bigint) (destBase:int) =
   printfn "IM HERE"
   let numDigits= bigint.Log destBase
   let startingExponent = (int)numDigits+1
@@ -57,39 +57,31 @@ let convertFromBigIntegerToBaseX (bignumber:bigint) destBase =
   [for x in 1..startingExponent do yield startingExponent-x] 
     |> Seq.fold(
       fun (acc:bigint*System.Text.StringBuilder) x->
-        let dec=(fst acc)/(destBase**x)
+        let dec=(fst acc)/((bigint destBase)**x)
         printfn "zonk %A %A" x dec
-        let remainder = (fst acc)%(destBase**x)
+        let remainder = (fst acc)%((bigint destBase)**x)
         resultBuffer.Append (string dec ) |> ignore
         (remainder,resultBuffer)
       ) (bignumber, resultBuffer)
     |>ignore
-  printfn "THE ANSWER IS %A" resultBuffer
-  resultBuffer
+  //printfn "THE ANSWER IS %A" resultBuffer
+  string resultBuffer
 
 
 
-let parseCLIOptionsForNumberBase iArgIndex = // DISCRIMINATED UNION ARG HELPER NEVER FAIL
+let parseCLIOptionsForNumberBase (arg:string) = // DISCRIMINATED UNION ARG HELPER NEVER FAIL
   try 
-    let arg=System.Environment.GetCommandLineArgs()[iArgIndex]
     let tryParse = System.Int32.TryParse(arg)
     if fst tryParse
       then BaseInBaseTenNotation (snd tryParse)
       else FunkyOddballBase (arg)
    with |_ ->BaseInBaseTenNotation 10
 
-// ACCEPTANCE TESTS AND ALL OTHER CODE STARTS HERE
+// COMMON ENTRY POINT FOR SCRIPT, MICROSERVICE, TEST, COMPOSITION, ETC
 let main arg1 arg2 arg3 =
   let srcNumberToTranslate=arg1
-  let srcNumberBase:NumberBase= parseCLIOptionsForNumberBase 3
-  let targetNumberBase = parseCLIOptionsForNumberBase 4
-
-
-
-
-  //let srcNumberBase:NumberBase= parseCLIOptionsForNumberBase 3
-  //let targetNumberBase = parseCLIOptionsForNumberBase 4
-
+  let srcNumberBase:NumberBase= parseCLIOptionsForNumberBase arg2
+  let targetNumberBase = parseCLIOptionsForNumberBase arg3
   // OUTER ONION TEST/PRINT
   if VERBOSE
     then
@@ -165,7 +157,8 @@ let main arg1 arg2 arg3 =
           then bigint (  superHugeNumberString.Length-1 - i * exponentWalkingDirection)
           else bigint ((i+1)*(-1))
       let digitValueMultiplier:bigint = BigInteger.Pow(inputBase,(int)exponentMultiplier)
-      let digitValue = BigInteger.Parse(string x)
+      //let digitValue = BigInteger.Parse(string x)
+      let digitValue=convertDigitToValue x targetNumberBase |> bigint
       let runningResult = digitValueMultiplier * digitValue
       runningResult
       )
@@ -176,13 +169,18 @@ let main arg1 arg2 arg3 =
   let convertedToBaseTen:bigint = temporarySums |> Seq.sum
   printfn "converted to base ten bigint %A" convertedToBaseTen
 
-  let rur=convertFromBigIntegerToBaseX convertedToBaseTen 7I
+  let rur=
+    match targetNumberBase
+      with 
+        | BaseInBaseTenNotation x->convertFromBigIntegerToBaseX convertedToBaseTen x
+        |_->"FUNKY BASE TYPES NOT IMPLEMENTED"
+    
 
 
 
 
 
-  "0"
+  rur
 
 
 
