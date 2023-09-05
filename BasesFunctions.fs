@@ -68,6 +68,40 @@ let convertFromBigIntegerToBaseX (bignumber:bigint) (destBase:int) =
     |>ignore
   dumpIt $"THE ANSWER IS {resultBuffer}"
   string resultBuffer
+let makeSureStringHasDecimalOrAddAtEnd (myString:string) = 
+  match System.Text.RegularExpressions.Regex.Split(myString, "\.").Length
+    with 
+      | 1->(myString + ".")
+      | 2->myString
+      | _->"0"
+let moveDecimal (originalString:string) moveDirection expNum =
+  let moveCount=try int(expNum) with |_ ->0
+  let numSplit = try originalString.Split([|'.'|]) with |_ ->[|"0";"0"|]
+  let decimalLocation = try originalString.IndexOf(".") with |_-> originalString.Length
+  let moveRight = if moveDirection = "+" then true else false
+  dumpIt $"moveCount {moveCount} numSplit {numSplit} decimalLocation {decimalLocation} moveRight {moveRight} "
+
+  let newDecimal = 
+    if expNum = "0" then 0
+    else if moveRight then decimalLocation + moveCount else decimalLocation - moveCount
+  let whatToDo =
+    match newDecimal
+      with
+        |_ when newDecimal =0 ->(Nothing,0)
+        |_ when newDecimal <0 ->(AddLeadingZeros, -1*newDecimal)
+        |_ when newDecimal >numSplit[1].Length+2 -> (AddTrailingZeros, 1+newDecimal-originalString.Length)
+        |_ -> (MoveDecimalAroundInNumber,newDecimal)
+  let explodedNumber =
+    match whatToDo
+      with
+        | (Nothing,_) ->numSplit[0]
+        | (AddLeadingZeros,n)->"." + String('0',snd whatToDo) + numSplit[0] + numSplit[1]
+        | (AddTrailingZeros,n)->numSplit[0] + numSplit[1] + String('0',snd whatToDo)
+        | (MoveDecimalAroundInNumber,n)->""
+
+  dumpIt $" BIZ CORE\n WhatToDo {whatToDo} newDecimal {newDecimal} Big Honking Incoming Number {explodedNumber}"
+  explodedNumber
+
 
 let parseCLIOptionsForNumberBase (arg:string) = // DISCRIMINATED UNION ARG HELPER NEVER FAIL
   try 
@@ -93,45 +127,10 @@ let main arg1 arg2 arg3 =
   let mainNumber = try (splitByScientificNotation srcNumberToTranslate)[0] with |_ -> "0"
   let exponentNumber = try (splitByScientificNotation srcNumberToTranslate)[1] with |_ -> "0"
   let exponentSign = if srcNumberToTranslate.Contains("-") then "-" else "+"
-  let makeSureStringHasDecimalOrAddAtEnd (myString:string) = 
-    match System.Text.RegularExpressions.Regex.Split(myString, "\.").Length
-      with 
-        | 1->(myString + ".")
-        | 2->myString
-        | _->"0"
   let numberWithDecimal=makeSureStringHasDecimalOrAddAtEnd mainNumber
-
-  let moveDecimal (originalString:string) moveDirection expNum =
-    let moveCount=try int(expNum) with |_ ->0
-    let numSplit = try originalString.Split([|'.'|]) with |_ ->[|"0";"0"|]
-    let decimalLocation = try originalString.IndexOf(".") with |_-> originalString.Length
-    let moveRight = if moveDirection = "+" then true else false
-    dumpIt $"moveCount {moveCount} numSplit {numSplit} decimalLocation {decimalLocation} moveRight {moveRight} "
-
-    let newDecimal = 
-      if exponentNumber = "0" then 0
-      else if moveRight then decimalLocation + moveCount else decimalLocation - moveCount
-    let whatToDo =
-      match newDecimal
-        with
-          |_ when newDecimal =0 ->(Nothing,0)
-          |_ when newDecimal <0 ->(AddLeadingZeros, -1*newDecimal)
-          |_ when newDecimal >numSplit[1].Length+2 -> (AddTrailingZeros, 1+newDecimal-originalString.Length)
-          |_ -> (MoveDecimalAroundInNumber,newDecimal)
-    let explodedNumber =
-      match whatToDo
-        with
-          | (Nothing,_) ->numSplit[0]
-          | (AddLeadingZeros,n)->"." + String('0',snd whatToDo) + numSplit[0] + numSplit[1]
-          | (AddTrailingZeros,n)->numSplit[0] + numSplit[1] + String('0',snd whatToDo)
-          | (MoveDecimalAroundInNumber,n)->""
-
-    dumpIt $" BIZ CORE\n WhatToDo {whatToDo} newDecimal {newDecimal} Big Honking Incoming Number {explodedNumber}"
-    explodedNumber
 
   // BUSINESS CONSISTENCY TESTS
   dumpIt $"BIZ CONSISTENCY\n IsScientificNotaion {(isScientificNotation srcNumberToTranslate)} Main Number {mainNumber} Exponent Number  {exponentNumber} Exponent Sign{exponentSign} NumberWithDecimal {numberWithDecimal}"
-
 
   let superHugeNumberString = moveDecimal (makeSureStringHasDecimalOrAddAtEnd mainNumber) exponentSign exponentNumber
 
