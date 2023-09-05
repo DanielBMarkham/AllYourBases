@@ -29,9 +29,9 @@ let convertValueToDigit (srcNumber:int) (destBase:NumberBase) =
 
 let convertDigitToValue (srcDigit:char) (srcBase:NumberBase) = 
   let isNormalDigitPresent=System.Text.RegularExpressions.Regex.Match(string srcDigit, "\d").Length>0
-  if isNormalDigitPresent 
-    then dumpIt "normal digit present" 
-    else dumpIt "no normal digit present"
+  // if isNormalDigitPresent 
+  //   then dumpIt "normal digit present" 
+  //   else dumpIt "no normal digit present"
   match srcBase
     with 
       | BaseInBaseTenNotation(a)->
@@ -51,7 +51,8 @@ let isScientificNotation numberString = System.Text.RegularExpressions.Regex.Mat
 let splitByScientificNotation numberString = System.Text.RegularExpressions.Regex.Split(numberString, "[e|E][\+\-]")
 
 let convertFromBigIntegerToBaseX (bignumber:bigint) (destBase:int) =
-  let numDigits= bigint.Log destBase
+  dumpIt $"bignumber {bignumber} destBase {destBase}"
+  let numDigits= (bigint.Log bignumber)/(bigint.Log destBase)
   let startingExponent = (int)numDigits+1
   let resultBuffer=new System.Text.StringBuilder(4096)
   dumpIt $"numDigits {startingExponent}"
@@ -59,7 +60,7 @@ let convertFromBigIntegerToBaseX (bignumber:bigint) (destBase:int) =
     |> Seq.fold(
       fun (acc:bigint*System.Text.StringBuilder) x->
         let dec=(fst acc)/((bigint destBase)**x)
-        printfn "zonk %A %A" x dec
+        printf "current digit index %A power it represents %A number of times it fits %A  --  " x ((bigint destBase)**x) dec
         let remainder = (fst acc)%((bigint destBase)**x)
         resultBuffer.Append (string dec ) |> ignore
         (remainder,resultBuffer)
@@ -83,7 +84,6 @@ let main arg1 arg2 arg3 =
   let targetNumberBase = parseCLIOptionsForNumberBase arg3
   // OUTER ONION TEST/PRINT
   
-  dumpIt $"I ate the entire {test}"
   dumpIt $"OUTER ONION\n Number to translate: {srcNumberToTranslate} Number Base {srcNumberBase} Base to translate to base: {targetNumberBase}" 
       
   // BUSINESS CONSISTENCY - IS DATA IN FORMAT THAT MAKES SENSE TO PROBLEM
